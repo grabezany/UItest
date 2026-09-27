@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Swipe Navigation</title>
     <style>
         * {
             box-sizing: border-box;
@@ -11,23 +11,18 @@
             padding: 0;
         }
 
-        body {
-            background-color: #222222;
-            color: #ffffff;
-            padding-top: 60px;
-            padding-bottom: 60px;
-            font-family: sans-serif;
-            overscroll-behavior-y: contain;
-            touch-action: pan-y; 
-        }
-
-        html body {
+        html, body {
             width: 100%;
             height: 100%;
             overflow: hidden;
             overscroll-behavior: none;
             touch-action: none;
             position: fixed;
+            background-color: #222222;
+            color: #ffffff;
+            font-family: sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
         }
 
         .topnavbar {
@@ -58,11 +53,14 @@
 
         .navbar {
             background-color: #333;
-            width: 100%;
+            width: 90%;
+            max-width: 400px;
             height: 50px;
             position: fixed;
-            bottom: 0;
-            left: 0;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 25px;
             z-index: 9999;
             display: flex;
             justify-content: space-around;
@@ -76,21 +74,47 @@
             height: auto;
             object-fit: contain;
             cursor: pointer;
+            opacity: 0.5;
+            transition: opacity 0.3s ease;
         }
 
-        .content {
+        .navbar img.active {
+            opacity: 1;
+        }
+
+        .viewport {
+            width: 100%;
+            height: calc(100vh - 100px);
+            margin-top: 50px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .slider-track {
+            display: flex;
+            width: 400%;
+            height: 100%;
+            transform: translateX(0%);
+            will-change: transform;
+        }
+
+        .slider-track.animate {
+            transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .page {
+            width: 25%;
+            height: 100%;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: calc(100vh - 120px);
             text-align: center;
             padding: 20px;
         }
 
-        #swipe-output {
-            margin-top: 15px;
-            font-size: 1.2rem;
+        .page h2 {
+            font-size: 1.5rem;
             color: #00e676;
             font-weight: bold;
         }
@@ -100,95 +124,127 @@
 
     <div class="topnavbar">
         <img src="https://grabezany.github.io/UItest/new_project.png" alt="Upload">
-        <h3>WatermelonKatana</h3>
+        <h3 id="app-title">WatermelonKatana</h3>
         <img src="https://grabezany.github.io/UItest/mail_icon.png" alt="Mail">
     </div>
 
-    <main class="content" id="swipe-zone">
-        <h2 id="swipe-output">Swipe Test</h2>
-    </main>
 
-    <div class="navbar">
-        <img src="https://grabezany.github.io/UItest/home_icon.png" alt="First Image">
-        <img src="https://grabezany.github.io/UItest/default_pfp.png" alt="Second Image">
-        <img src="https://grabezany.github.io/UItest/search_icon.png" alt="Third Image">
-        <img src="https://grabezany.github.io/UItest/chat_icon.png" alt="Fifth Image">
+    <div class="viewport" id="viewport">
+        <div class="slider-track animate" id="track">
+            <main class="page" id="page-home">
+                <h2>Home Page</h2>
+            </main>
+            <main class="page" id="page-profile">
+                <h2>Profile Page</h2>
+            </main>
+            <main class="page" id="page-search">
+                <h2>Search Page</h2>
+            </main>
+            <main class="page" id="page-chat">
+                <h2>Chat Page</h2>
+            </main>
+        </div>
+    </div>
+
+    <div class="navbar" id="bottom-navbar">
+        <img src="https://grabezany.github.io/UItest/home_icon.png" alt="Home" class="active" onclick="goToPage(0)">
+        <img src="https://grabezany.github.io/UItest/default_pfp.png" alt="Profile" onclick="goToPage(1)">
+        <img src="https://grabezany.github.io/UItest/search_icon.png" alt="Search" onclick="goToPage(2)">
+        <img src="https://grabezany.github.io/UItest/chat_icon.png" alt="Chat" onclick="goToPage(3)">
     </div>
 
     <script>
-        let currentPage = "home";
-        let touchStartX = 0;
-        let touchStartY = 0;
-        let touchEndX = 0;
-        let touchEndY = 0;
-        const minSwipeDistance = 50;
-        const swipeZone = document.getElementById('swipe-zone');
-        const output = document.getElementById('swipe-output'); 
-        swipeZone.addEventListener('touchstart', (e) => {
-            touchStartX = e.changedTouches[0].screenX;
-            touchStartY = e.changedTouches[0].screenY;
-        }, false);
-        swipeZone.addEventListener('touchend', (e) => {
-            touchEndX = e.changedTouches[0].screenX;
-            touchEndY = e.changedTouches[0].screenY;
-            handleSwipe();
-        }, false);
+        //DISCLAIMER: The swiping animation is AI generated
+        const track = document.getElementById('track');
+        const viewport = document.getElementById('viewport');
+        const navIcons = document.querySelectorAll('#bottom-navbar img');
 
-        function handleSwipe() {
-            const deltaX = touchEndX - touchStartX;
-            const deltaY = touchEndY - touchStartY;
-            if (Math.abs(deltaX) > Math.abs(deltaY)) {
-                if (Math.abs(deltaX) > minSwipeDistance) {
-                    if (deltaX > 0) {
-                        onSwipeRight();
-                    } else {
-                        onSwipeLeft();
-                    }
+        let currentIndex = 0;
+        const totalPages = 4;
+
+        let startX = 0;
+        let currentTranslate = 0;
+        let prevTranslate = 0;
+        let isDragging = false;
+
+
+        viewport.addEventListener('touchstart', touchStart);
+        viewport.addEventListener('touchmove', touchMove);
+        viewport.addEventListener('touchend', touchEnd);
+
+        viewport.addEventListener('mousedown', touchStart);
+        viewport.addEventListener('mousemove', touchMove);
+        viewport.addEventListener('mouseup', touchEnd);
+        viewport.addEventListener('mouseleave', () => { if (isDragging) touchEnd(); });
+
+        function getPositionX(event) {
+            return event.type.includes('mouse') ? event.clientX : event.touches[0].clientX;
+        }
+
+        function touchStart(event) {
+            isDragging = true;
+            startX = getPositionX(event);
+            track.classList.remove('animate');
+        }
+
+        function touchMove(event) {
+            if (!isDragging) return;
+            const currentX = getPositionX(event);
+            const deltaX = currentX - startX;
+            const viewportWidth = viewport.clientWidth;
+            
+
+            const currentPos = -currentIndex * viewportWidth + deltaX;
+            track.style.transform = `translateX(${currentPos}px)`;
+        }
+
+        function touchEnd() {
+            if (!isDragging) return;
+            isDragging = false;
+            
+            track.classList.add('animate');
+            const viewportWidth = viewport.clientWidth;
+            
+
+            const transformMatrix = window.getComputedStyle(track).getPropertyValue('transform');
+            let movedBy = 0;
+            if (transformMatrix !== 'none') {
+                const values = transformMatrix.split('(')[1].split(')')[0].split(',');
+                movedBy = parseFloat(values[4]) - (-currentIndex * viewportWidth);
+            }
+
+            const threshold = viewportWidth * 0.2;
+
+            if (movedBy < -threshold && currentIndex < totalPages - 1) {
+                currentIndex++;
+            } else if (movedBy > threshold && currentIndex > 0) {
+                currentIndex--;
+            }
+
+            updateSlidePosition();
+        }
+
+        function goToPage(index) {
+            currentIndex = index;
+            track.classList.add('animate');
+            updateSlidePosition();
+        }
+
+        function updateSlidePosition() {
+            const viewportWidth = viewport.clientWidth;
+            currentTranslate = -currentIndex * viewportWidth;
+            track.style.transform = `translateX(${currentTranslate}px)`;
+
+
+            navIcons.forEach((icon, idx) => {
+                if (idx === currentIndex) {
+                    icon.classList.add('active');
+                } else {
+                    icon.classList.remove('active');
                 }
-            } else {
-                if (Math.abs(deltaY) > minSwipeDistance) {
-                    if (deltaY > 0) {
-                        onSwipeDown();
-                    } else {
-                        onSwipeUp();
-                    }
-                }
-            }
+            });
         }
-
-        function onSwipeLeft() {
-            if (currentPage === "home") {
-                currentPage = "profile";
-                output.textContent = "Profile";
-            } else if (currentPage === "profile") {
-                currentPage = "search";
-                output.textContent = "Search";
-            } else if (currentPage === "search") {
-                currentPage = "chat";
-                output.textContent = "Chat";
-            }
-        }
-
-        function onSwipeRight() {
-            if (currentPage === "chat") {
-                currentPage = "search";
-                output.textContent = "Search";
-            } else if (currentPage === "search") {
-                currentPage = "profile";
-                output.textContent = "Profile";
-            } else if (currentPage === "profile") {
-                currentPage = "home";
-                output.textContent = "Home";
-            }
-        }
-
-        function onSwipeUp() {
-            output.textContent = "Swiped Up";
-        }
-
-        function onSwipeDown() {
-            output.textContent = "Swiped Down";
-        }
+        window.addEventListener('resize', updateSlidePosition);
     </script>
 </body>
 </html>
