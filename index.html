@@ -87,11 +87,12 @@
 
         .viewport {
   width: 100%;
-  height: calc(100vh - 100px - env(safe-area-inset-top));
-  margin-top: calc(50px + env(safe-area-inset-top));
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
   overflow: hidden;
-  position: relative;
-        }    
+}
 
         .slider-track {
             display: flex;
@@ -106,15 +107,15 @@
         }
 
         .page {
-            width: 25%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 20px;
-        }
+  width: 25%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: calc(60px + env(safe-area-inset-top)) 20px calc(80px + env(safe-area-inset-bottom));
+}
 
         .page h2 {
             font-size: 1.5rem;
@@ -132,19 +133,35 @@
     </div>
 
 
+
     <div class="viewport" id="viewport">
         <div class="slider-track animate" id="track">
             <main class="page" id="page-home">
-                <h2>Home Page</h2>
+                <h2>Featured Projects</h2>
+                <noscript>
+                    <embed>
+                    
+                    </embed>
+                </noscript>
+
+                <h2>Latest Projects</h2>
+                <noscript>
+                    <embed>
+                    
+                    </embed>
+                </noscript>
+                <p>Upload your projects, interact with other projects, chat with friends and more! We have a large gallery of games and a growing user base. Help us by posting your games or playing other peoples games.</p>
             </main>
             <main class="page" id="page-profile">
-                <h2>Profile Page</h2>
+                <h2>Profile</h2>
+                <p>You arent logged in. either log in or create an account to proceed</p>
             </main>
             <main class="page" id="page-search">
-                <h2>Search Page</h2>
+                <h2>Search</h2>
+                <p>Search for projects, users, or tags...</p>
             </main>
             <main class="page" id="page-chat">
-                <h2>Chat Page</h2>
+                <h2>Chat</h2> <h2>Forum</h2>
             </main>
         </div>
     </div>
