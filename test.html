@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Swipe Navigation</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            overscroll-behavior: none;
+            touch-action: none;
+            position: fixed;
+            background-color: #222222;
+            color: #ffffff;
+            font-family: sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .topnavbar {
+            width: 100%;
+            height: 50px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            background-color: #333333;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 15px;
+            z-index: 9999;
+        }
+
+        .topnavbar img {
+            max-height: 30px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .topnavbar h3 {
+            margin: 0;
+            font-size: 1.1rem;
+            text-align: center;
+        }
+
+        .navbar {
+            background-color: #333;
+            width: 100%;
+            height: 50px;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            z-index: 9999;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .navbar img {
+            max-width: 25%;
+            max-height: 30px;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            cursor: pointer;
+            opacity: 0.5;
+            transition: opacity 0.3s ease;
+        }
+
+        .navbar img.active {
+            opacity: 1;
+        }
+
+        /* Container for horizontal slider */
+        .viewport {
+            width: 100%;
+            height: calc(100vh - 100px);
+            margin-top: 50px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .slider-track {
+            display: flex;
+            width: 400%; /* 4 pages = 400% */
+            height: 100%;
+            transform: translateX(0%);
+            will-change: transform;
+        }
+
+        .slider-track.animate {
+            transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .page {
+            width: 25%; /* Each page takes 1/4th of the track */
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .page h2 {
+            font-size: 1.5rem;
+            color: #00e676;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="topnavbar">
+        <img src="https://grabezany.github.io/UItest/new_project.png" alt="Upload">
+        <h3 id="app-title">WatermelonKatana</h3>
+        <img src="https://grabezany.github.io/UItest/mail_icon.png" alt="Mail">
+    </div>
+
+    <!-- Swipeable Viewport Area -->
+    <div class="viewport" id="viewport">
+        <div class="slider-track animate" id="track">
+            <main class="page" id="page-home">
+                <h2>Home Page</h2>
+            </main>
+            <main class="page" id="page-profile">
+                <h2>Profile Page</h2>
+            </main>
+            <main class="page" id="page-search">
+                <h2>Search Page</h2>
+            </main>
+            <main class="page" id="page-chat">
+                <h2>Chat Page</h2>
+            </main>
+        </div>
+    </div>
+
+    <div class="navbar" id="bottom-navbar">
+        <img src="https://grabezany.github.io/UItest/home_icon.png" alt="Home" class="active" onclick="goToPage(0)">
+        <img src="https://grabezany.github.io/UItest/default_pfp.png" alt="Profile" onclick="goToPage(1)">
+        <img src="https://grabezany.github.io/UItest/search_icon.png" alt="Search" onclick="goToPage(2)">
+        <img src="https://grabezany.github.io/UItest/chat_icon.png" alt="Chat" onclick="goToPage(3)">
+    </div>
+
+    <script>
+        const track = document.getElementById('track');
+        const viewport = document.getElementById('viewport');
+        const navIcons = document.querySelectorAll('#bottom-navbar img');
+
+        let currentIndex = 0;
+        const totalPages = 4;
+
+        let startX = 0;
+        let currentTranslate = 0;
+        let prevTranslate = 0;
+        let isDragging = false;
+
+        // Mouse & Touch Event Listeners
+        viewport.addEventListener('touchstart', touchStart);
+        viewport.addEventListener('touchmove', touchMove);
+        viewport.addEventListener('touchend', touchEnd);
+
+        viewport.addEventListener('mousedown', touchStart);
+        viewport.addEventListener('mousemove', touchMove);
+        viewport.addEventListener('mouseup', touchEnd);
+        viewport.addEventListener('mouseleave', () => { if (isDragging) touchEnd(); });
+
+        function getPositionX(event) {
+            return event.type.includes('mouse') ? event.clientX : event.touches[0].clientX;
+        }
+
+        function touchStart(event) {
+            isDragging = true;
+            startX = getPositionX(event);
+            track.classList.remove('animate'); // Remove transition during dragging for real-time response
+        }
+
+        function touchMove(event) {
+            if (!isDragging) return;
+            const currentX = getPositionX(event);
+            const deltaX = currentX - startX;
+            const viewportWidth = viewport.clientWidth;
+            
+            // Calculate real-time translation offset
+            const currentPos = -currentIndex * viewportWidth + deltaX;
+            track.style.transform = `translateX(${currentPos}px)`;
+        }
+
+        function touchEnd() {
+            if (!isDragging) return;
+            isDragging = false;
+            
+            track.classList.add('animate'); // Re-enable smooth transition animation
+            const viewportWidth = viewport.clientWidth;
+            
+            // Extract the actual translated pixel offset
+            const transformMatrix = window.getComputedStyle(track).getPropertyValue('transform');
+            let movedBy = 0;
+            if (transformMatrix !== 'none') {
+                const values = transformMatrix.split('(')[1].split(')')[0].split(',');
+                movedBy = parseFloat(values[4]) - (-currentIndex * viewportWidth);
+            }
+
+            const threshold = viewportWidth * 0.2; // Require 20% drag distance to switch screens
+
+            if (movedBy < -threshold && currentIndex < totalPages - 1) {
+                currentIndex++;
+            } else if (movedBy > threshold && currentIndex > 0) {
+                currentIndex--;
+            }
+
+            updateSlidePosition();
+        }
+
+        function goToPage(index) {
+            currentIndex = index;
+            track.classList.add('animate');
+            updateSlidePosition();
+        }
+
+        function updateSlidePosition() {
+            const viewportWidth = viewport.clientWidth;
+            currentTranslate = -currentIndex * viewportWidth;
+            track.style.transform = `translateX(${currentTranslate}px)`;
+
+            // Update bottom navbar active icon states
+            navIcons.forEach((icon, idx) => {
+                if (idx === currentIndex) {
+                    icon.classList.add('active');
+                } else {
+                    icon.classList.remove('active');
+                }
+            });
+        }
+
+        // Adjust alignment on window resize
+        window.addEventListener('resize', updateSlidePosition);
+    </script>
+</body>
+</html>
