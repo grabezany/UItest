@@ -159,26 +159,26 @@
         function onSwipeLeft() {
             if (currentPage === "home") {
                 currentPage = "profile";
-                output.textContent = "Navigated to Profile Page";
+                output.textContent = "Profile";
             } else if (currentPage === "profile") {
                 currentPage = "search";
-                output.textContent = "Navigated to Search Page";
+                output.textContent = "Search";
             } else if (currentPage === "search") {
                 currentPage = "chat";
-                output.textContent = "Navigated to Chat Page";
+                output.textContent = "Chat";
             }
         }
 
         function onSwipeRight() {
             if (currentPage === "chat") {
                 currentPage = "search";
-                output.textContent = "Navigated to Search Page";
+                output.textContent = "Search";
             } else if (currentPage === "search") {
                 currentPage = "profile";
-                output.textContent = "Navigated to Profile Page";
+                output.textContent = "Profile";
             } else if (currentPage === "profile") {
                 currentPage = "home";
-                output.textContent = "Navigated to Home Page";
+                output.textContent = "Home";
             }
         }
 
