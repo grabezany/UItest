@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Swipe Controls Example</title>
+    <title>Document</title>
     <style>
         * {
             box-sizing: border-box;
@@ -116,6 +116,7 @@
     </div>
 
     <script>
+        let currentPage = "home";
         let touchStartX = 0;
         let touchStartY = 0;
         let touchEndX = 0;
@@ -156,19 +157,39 @@
         }
 
         function onSwipeLeft() {
-            output.textContent = "Swiped Left ⬅️";
+            output.textContent = "Swiped Left";
+            if (currentPage === "home") {
+                currentPage = "profile";
+                output.textContent = "Navigated to Profile Page";
+            } else if (currentPage === "profile") {
+                currentPage = "search";
+                output.textContent = "Navigated to Search Page";
+            } else if (currentPage === "search") {
+                currentPage = "chat";
+                output.textContent = "Navigated to Chat Page";
+            }
         }
 
         function onSwipeRight() {
-            output.textContent = "Swiped Right ➡️";
+            output.textContent = "Swiped Right";
+            if (currentPage === "chat") {
+                currentPage = "search";
+                output.textContent = "Navigated to Search Page";
+            } else if (currentPage === "search") {
+                currentPage = "profile";
+                output.textContent = "Navigated to Profile Page";
+            } else if (currentPage === "profile") {
+                currentPage = "home";
+                output.textContent = "Navigated to Home Page";
+            }
         }
 
         function onSwipeUp() {
-            output.textContent = "Swiped Up ⬆️";
+            output.textContent = "Swiped Up";
         }
 
         function onSwipeDown() {
-            output.textContent = "Swiped Down ⬇️";
+            output.textContent = "Swiped Down";
         }
     </script>
 </body>
