@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Swipe Navigation</title>
+<title>UI</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -158,6 +158,38 @@ html, body {
 .pv-form button { margin-top: 8px; background: #00e676; color: #222; border: 0; border-radius: 15px; padding: 8px 18px; font-weight: bold; }
 .pv-form button:disabled { opacity: .5; }
 .pv-msg { font-size: .85rem; margin-top: 6px; opacity: .8; }
+
+.auth-tabs { display: flex; justify-content: center; gap: 10px; margin: 6px 0 16px; }
+.auth-form { display: flex; flex-direction: column; gap: 10px; text-align: left; }
+.auth-input {
+  width: 100%; padding: 12px 14px; border-radius: 14px; border: 1px solid rgba(255, 255, 255, 0.08); outline: 0;
+  background: #2a2a2a; color: #fff; font-size: 16px; user-select: text; -webkit-user-select: text;
+}
+.auth-input:focus { border-color: #00e676; }
+.auth-btn {
+  display: block; width: 100%; padding: 12px; border-radius: 14px; border: 0; background: #00e676; color: #111;
+  font-size: 1rem; font-weight: bold; text-align: center; text-decoration: none; margin-top: 4px;
+}
+.auth-btn.alt { background: #2a2a2a; color: #fff; border: 1px solid rgba(255, 255, 255, 0.08); }
+.auth-btn:disabled { opacity: .5; }
+.auth-error { background: rgba(255, 77, 79, 0.9); color: #fff; border-radius: 12px; padding: 8px 12px; margin-bottom: 12px; font-size: .85rem; text-align: left; overflow-wrap: anywhere; }
+.auth-error[hidden] { display: none; }
+.auth-links { margin-top: 16px; font-size: .85rem; opacity: .8; display: flex; flex-direction: column; gap: 6px; }
+.auth-links a, .pf-bio a { color: #4facfe; }
+.pf-card { background: #2a2a2a; border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 18px; overflow: hidden; }
+.pf-banner { width: 100%; height: 110px; background: #1a1a1a; overflow: hidden; }
+.pf-banner img, .pf-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pf-body { padding: 0 16px 18px; }
+.pf-avatar { width: 84px; height: 84px; border-radius: 50%; overflow: hidden; border: 4px solid #2a2a2a; background: #1a1a1a; margin: -42px auto 0; position: relative; }
+.pf-name { font-size: 1.3rem; font-weight: bold; margin-top: 8px; overflow-wrap: anywhere; }
+.pf-role { font-size: .8rem; color: #00e676; margin-top: 2px; }
+.pf-bio { font-size: .9rem; line-height: 1.45; opacity: .85; margin: 12px 0; overflow-wrap: anywhere; user-select: text; -webkit-user-select: text; }
+.pf-stats { display: flex; justify-content: space-around; margin: 14px 0; }
+.pf-stats div { display: flex; flex-direction: column; }
+.pf-stats strong { font-size: 1.1rem; }
+.pf-stats span { font-size: .7rem; opacity: .6; }
+.pf-joined { font-size: .75rem; opacity: .55; margin-bottom: 14px; }
+.pf-actions { display: flex; flex-direction: column; gap: 8px; }
 </style>
 </head>
 <body>
@@ -183,8 +215,7 @@ html, body {
     </main>
 
     <main class="page" id="page-profile">
-      <h2>Profile</h2>
-      <p>You aren't logged in. Either log in or create an account to proceed.</p>
+      <div id="profile-root"></div>
     </main>
 
     <main class="page" id="page-search">
@@ -597,7 +628,118 @@ document.getElementById("mail-btn").addEventListener("click", openNotifs);
 document.getElementById("nv-back").addEventListener("click", () => {
   if (history.state?.notif) history.back(); else closeNotifs();
 });
-loadAuth();
+const profileRoot = document.getElementById("profile-root");
+let authMode = "login";
+
+function safeSrc(url, fallback) {
+  return /^(https?:\/\/|\/)/.test(url || "") && !/["'<>]/.test(url) ? url : fallback;
+}
+
+function focalImg(url, pos, fallback) {
+  pos = pos || {};
+  const clamp = (v, lo, hi, d) => { v = Number(v); return isFinite(v) ? Math.max(lo, Math.min(hi, v)) : d; };
+  const x = clamp(pos.x, 0, 100, 50), y = clamp(pos.y, 0, 100, 50), zoom = clamp(pos.zoom, 100, 400, 100);
+  return `<img alt="" src="${esc(safeSrc(url, fallback))}" style="object-position:${x}% ${y}%;transform:scale(${zoom / 100});transform-origin:${x}% ${y}%">`;
+}
+
+function renderProfile() {
+  if (authData && authData.auth && authData.user) {
+    renderAccount(authData.user);
+  } else {
+    renderAuthForm();
+  }
+}
+
+function renderAuthForm() {
+  const register = authMode === "register";
+  profileRoot.innerHTML = `
+    <h2>${register ? "Sign up" : "Login"}</h2>
+    <div class="auth-tabs">
+      <button class="chat-tab-btn ${register ? "" : "active"}" data-mode="login">Login</button>
+      <button class="chat-tab-btn ${register ? "active" : ""}" data-mode="register">Sign up</button>
+    </div>
+    <div class="auth-error" id="auth-error" hidden></div>
+    <form class="auth-form" id="auth-form">
+      <input class="auth-input" id="auth-username" type="text" placeholder="Username" required autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false">
+      <input class="auth-input" id="auth-password" type="password" placeholder="Password" required autocomplete="${register ? "new-password" : "current-password"}">
+      ${register ? '<input class="auth-input" id="auth-confirm" type="password" placeholder="Confirm password" required autocomplete="new-password">' : ""}
+      <button class="auth-btn" id="auth-submit" type="submit">${register ? "Create account" : "Login"}</button>
+    </form>
+    <div class="auth-links">
+      <a href="/resetpass/email">Forgot password? Reset it</a>
+    </div>`;
+  profileRoot.querySelectorAll(".auth-tabs button").forEach(b => b.addEventListener("click", () => {
+    authMode = b.dataset.mode;
+    renderAuthForm();
+  }));
+  document.getElementById("auth-form").addEventListener("submit", submitAuth);
+}
+
+async function authRequest(path, username, password) {
+  const res = await fetch(path, {
+    method: "POST",
+    body: JSON.stringify({ username, password }),
+    headers: { "Content-Type": "application/json" }
+  });
+  let data = {};
+  try { data = await res.json(); } catch (err) {}
+  if (res.status >= 400) {
+    throw new Error((data.message || "Something went wrong") + (data.error ? ". " + data.error : ""));
+  }
+  return data;
+}
+
+async function submitAuth(e) {
+  e.preventDefault();
+  const errBox = document.getElementById("auth-error");
+  const btn = document.getElementById("auth-submit");
+  const username = document.getElementById("auth-username").value.trim();
+  const password = document.getElementById("auth-password").value;
+  errBox.hidden = true;
+  if (authMode === "register" && password !== document.getElementById("auth-confirm").value) {
+    errBox.textContent = "Passwords don\u2019t match.";
+    errBox.hidden = false;
+    return;
+  }
+  btn.disabled = true;
+  try {
+    if (authMode === "register") await authRequest("/api/auth/register", username, password);
+    await authRequest("/api/auth/login", username, password);
+    await loadAuth();
+    renderProfile();
+  } catch (err) {
+    errBox.textContent = err.message;
+    errBox.hidden = false;
+    btn.disabled = false;
+  }
+}
+
+function renderAccount(u) {
+  const joined = u.joinedAt ? new Date(Number(u.joinedAt)).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }) : "";
+  const count = a => Array.isArray(a) ? a.length : 0;
+  profileRoot.innerHTML = `
+    <div class="pf-card">
+      <div class="pf-banner">${focalImg(u.banner, u.bannerpos, "/images/default_banner.png")}</div>
+      <div class="pf-body">
+        <div class="pf-avatar">${focalImg(u.avatar, u.avatarpos, "/images/default_pfp.png")}</div>
+        <div class="pf-name">${esc(u.username)}</div>
+        <div class="pf-role">${esc(u.role || "")}</div>
+        <div class="pf-bio">${renderText(u.biography || "No biography yet.")}</div>
+        <div class="pf-stats">
+          <div><strong>${count(u.followers)}</strong><span>Followers</span></div>
+          <div><strong>${count(u.following)}</strong><span>Following</span></div>
+          <div><strong>${count(u.favorites)}</strong><span>Favorites</span></div>
+        </div>
+        ${joined ? `<div class="pf-joined">Joined ${esc(joined)}</div>` : ""}
+        <div class="pf-actions">
+          <a class="auth-btn" href="/user/${encodeURIComponent(u.username)}">View full profile</a>
+          <a class="auth-btn alt" href="/preferences">Preferences</a>
+        </div>
+      </div>
+    </div>`;
+}
+
+loadAuth().then(renderProfile);
 
 const track = document.getElementById("track");
 const viewport = document.getElementById("viewport");
